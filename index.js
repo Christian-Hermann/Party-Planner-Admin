@@ -1,6 +1,6 @@
 // === Constants ===
 const BASE = "https://fsa-crud-2aa9294fe819.herokuapp.com/api";
-const COHORT = ""; // Make sure to change this!
+const COHORT = "/2504-FTB-ET-WEB-FT"; // Make sure to change this!
 const API = BASE + COHORT;
 
 // === State ===
@@ -60,6 +60,42 @@ async function getGuests() {
 // === Components ===
 
 /** Party name that shows more details about the party when clicked */
+function partyForm() {
+  const $form = document.createElement("form");
+  $form.innerHTML = `
+  <h3>Add a New Party</h3>
+  <input name="name" placeholder="Name" required />
+  <input name="description" placeholder="Description" required />
+  <input name="date" type="date" required />
+  <input name="location" type="text" required/>
+  <button type="submit">Add Party</button>
+  `;
+
+  $form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const newParty = {
+      name: $form.name.value,
+      description: $form.description.value,
+      date: new Date($form.date.value).toISOString(),
+      location: $form.location.value,
+    };
+
+    try {
+      await fetch(API + "/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newParty),
+      });
+      await getParties();
+      $form.reset();
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  return $form;
+}
+
 function PartyListItem(party) {
   const $li = document.createElement("li");
 
@@ -102,8 +138,21 @@ function SelectedParty() {
     <address>${selectedParty.location}</address>
     <p>${selectedParty.description}</p>
     <GuestList></GuestList>
+    <button id="delete-btn">Delete party</button>
   `;
   $party.querySelector("GuestList").replaceWith(GuestList());
+
+  const $deleteBtn = $party.querySelector("#delete-btn");
+  $deleteBtn.addEventListener("click", async () => {
+    try {
+      await fetch(API + "/events/" + selectedParty.id, {
+        method: "DELETE",
+      });
+      await getParties();
+    } catch (e) {
+      console.error(e);
+    }
+  });
 
   return $party;
 }
@@ -135,6 +184,9 @@ function render() {
     <h1>Party Planner</h1>
     <main>
       <section>
+      <section id="form-section">
+      <form></form>
+      </section>
         <h2>Upcoming Parties</h2>
         <PartyList></PartyList>
       </section>
@@ -145,6 +197,7 @@ function render() {
     </main>
   `;
 
+  $app.querySelector("form").replaceWith(partyForm());
   $app.querySelector("PartyList").replaceWith(PartyList());
   $app.querySelector("SelectedParty").replaceWith(SelectedParty());
 }
